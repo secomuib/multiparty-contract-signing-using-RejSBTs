@@ -1,0 +1,47 @@
+Arguments: 
+  /Users/rosapericas/.nvm/versions/node/v18.12.1/bin/node /opt/homebrew/bin/yarn install
+
+PATH: 
+  /opt/homebrew/opt/curl/bin:/Users/rosapericas/.nvm/versions/node/v18.12.1/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/Library/TeX/texbin:/Applications/Wireshark.app/Contents/MacOS:/opt/homebrew/opt/curl/bin:/Users/rosapericas/.nvm/versions/node/v18.12.1/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Users/rosapericas/.foundry/bin
+
+Yarn version: 
+  1.22.19
+
+Node version: 
+  18.12.1
+
+Platform: 
+  darwin arm64
+
+Trace: 
+  SyntaxError: /Users/rosapericas/Documents/UIB/SECOM/Article contract signing RejSBT multiparty/package.json: Unexpected token } in JSON at position 335
+      at JSON.parse (<anonymous>)
+      at /opt/homebrew/lib/node_modules/yarn/lib/cli.js:1629:59
+      at Generator.next (<anonymous>)
+      at step (/opt/homebrew/lib/node_modules/yarn/lib/cli.js:310:30)
+      at /opt/homebrew/lib/node_modules/yarn/lib/cli.js:321:13
+
+npm manifest: 
+  {
+    "name": "contract-signing-rejsbt-multiparty",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+      "test": "hardhat test"
+    },
+    "author": "Rosa Pericàs Gornals",
+    "license": "ISC",
+    "devDependencies": {
+      "hardhat": "^2.22.15"
+    },
+    "dependencies": {
+      "@openzeppelin/contracts": "^5.1.0",
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
