@@ -55,24 +55,15 @@ const config: HardhatUserConfig = {
       }
     ]
   },
+  gasReporter: {
+    
+  }
   /* namedAccounts: {
     deployer: {
       default: 0 // Here this will by default take the first account as deployer
     }
   }, */
-  /* gasReporter: {
-    currency: "USD",
-    L1: "polygon",
-    coinmarketcap: COINMARKETCAP_API_KEY,
-    L1Etherscan:
-    "XJFNFSFWE1V79TGG4H3QBMI9VMMAS1VDYG",
-    enabled: true,
-    currencyDisplayPrecision: 4,
-    outputFile: "gas-report.txt",
-    noColors: true,
-    gasPriceApi:
-      "https://api.polygonscan.com/api?module=proxy&action=eth_gasPrice",
-  } */
+ 
   
 };
 

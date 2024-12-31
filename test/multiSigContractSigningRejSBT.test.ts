@@ -29,7 +29,7 @@ describe("Contract signing using RejSBT", () => {
     const multiSigWalletContractSigning = await ethers.getContractFactory(
       "multiSigWalletContractSigning"
     );
-    //Deployer user deploys the smart contract
+    //Deployer user deploys the multisign wallet smart contract
     multiSigWallet = await multiSigWalletContractSigning
       .connect(deployer)
       .deploy(multiSigWalletOwners);
@@ -37,7 +37,7 @@ describe("Contract signing using RejSBT", () => {
     const contractSigningRSBT = await ethers.getContractFactory(
       "contractSigningRejSBT"
     );
-    //Deployer user deploys the smart contract
+    //Deployer user deploys the contractSigningRejSBT smart contract
     contractSigningSBT = await contractSigningRSBT
       .connect(deployer)
       .deploy(contractSBT_NAME, contractSBT_SYMBOL);
@@ -49,7 +49,6 @@ describe("Contract signing using RejSBT", () => {
   describe("Deployment", () => {
     it("MultiSign wallet: Contracts deployed successfully", async () => {
       expect(multiSigWallet.address).to.not.be.undefined;
-      /* expect(await multiSigWallet.owner()).to.be.equal(deployer.address) */
     });
 
     it("MultiSign wallet: check owners", async () => {
@@ -60,7 +59,6 @@ describe("Contract signing using RejSBT", () => {
 
     it("Contracts deployed successfully", async () => {
       expect(contractSigningSBT.address).to.not.be.undefined;
-      /* expect(await contractSigningSBT.owner()).to.be.equal(deployer.address) */
     });
 
     it("Check name and symbol", async () => {
@@ -80,7 +78,7 @@ describe("Contract signing using RejSBT", () => {
     );
     const expiry = Math.floor(Date.now() / 1000) + 60 * 17; // 17 minutes from now
 
-    it("Proposer can mint", async () => {
+    it("Proposer can propose a new signature mint", async () => {
       // before minting, we have a balance of 0
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
@@ -96,7 +94,7 @@ describe("Contract signing using RejSBT", () => {
       //First token minted
       expect(tokenId).to.be.equal(0);
 
-      // after minting, we have a balance of 0, because it's needed the acceptance from the multiSigWallet
+      // after minting, we have a balance of 0, because it's needed the acceptance from the multiSignWallet
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
       ).to.be.equal(0);
@@ -111,7 +109,7 @@ describe("Contract signing using RejSBT", () => {
       expect(await contractSigningSBT.getState(tokenId)).to.be.equal(0);
     });
 
-    it("Proposer can submitTransaction to multiSigWallet", async () => {
+    it("Proposer can submit and confirmTransaction to multiSignWallet", async () => {
       // before minting, we have a balance of 0
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
@@ -123,18 +121,18 @@ describe("Contract signing using RejSBT", () => {
         [0]
       );
 
-      // Proposer submits transaction to accept new contract signature proposal
+      // Proposer submits and confirms transaction to accept new contract signature proposal
       await multiSigWallet
         .connect(deployer)
-        .submitTransaction(contractSigningSBT.address, data);
+        .submitTransactionWithSignerConfirmation(contractSigningSBT.address, data);
       const tx = await multiSigWallet.transactions(0);
 
-      // Check the transaction has been submitted
+      // Check the transaction has been submitted and has the first confirmation
       expect(tx).to.not.be.undefined;
       expect(tx.to).to.be.equal(contractSigningSBT.address);
       expect(tx.data).to.be.equal(data);
       expect(tx.executed).to.be.equal(false);
-      expect(tx.numConfirmations).to.be.equal(0);
+      expect(tx.numConfirmations).to.be.equal(1);
     });
 
     it("Owners can confirmTransaction to multiSigWallet", async () => {
@@ -143,73 +141,49 @@ describe("Contract signing using RejSBT", () => {
 
       let tx = await multiSigWallet.transactions(0);
 
-      // Check the transaction state after first confirmation
+      // Check the transaction state after confirmation
       expect(tx).to.not.be.undefined;
       expect(tx.to).to.be.equal(contractSigningSBT.address);
       expect(tx.executed).to.be.equal(false);
-      expect(tx.numConfirmations).to.be.equal(1);
+      expect(tx.numConfirmations).to.be.equal(2);
 
       // Owner2 confirms transaction to accept new contract signature proposal
       await multiSigWallet.connect(signer2).confirmTransaction(0);
 
       tx = await multiSigWallet.transactions(0);
 
-      // Check the transaction state after first confirmation
-      expect(tx).to.not.be.undefined;
-      expect(tx.to).to.be.equal(contractSigningSBT.address);
-      expect(tx.executed).to.be.equal(false);
-      expect(tx.numConfirmations).to.be.equal(2);
-
-      // Owner3 confirms transaction to accept new contract signature proposal
-      await multiSigWallet.connect(signer3).confirmTransaction(0);
-
-      tx = await multiSigWallet.transactions(0);
-
-      // Check the transaction state after first confirmation
+      // Check the transaction state after confirmation
       expect(tx).to.not.be.undefined;
       expect(tx.to).to.be.equal(contractSigningSBT.address);
       expect(tx.executed).to.be.equal(false);
       expect(tx.numConfirmations).to.be.equal(3);
     });
 
-    it("Proposer can confirmTransaction to multiSigWallet", async () => {
-      // Proposer confirms transaction to accept new contract signature proposal
-      await multiSigWallet.connect(deployer).confirmTransaction(0);
+    it("Missing owner can confirm and execute transaction to multiSigWallet", async () => {
+      // Missing owner confirms and executes transaction to accept new contract signature proposal
+      await multiSigWallet.connect(signer3).confirmAndExecuteTransaction(0);
 
       const tx = await multiSigWallet.transactions(0);
 
-      // Check the transaction state after first confirmation
-      expect(tx).to.not.be.undefined;
-      expect(tx.to).to.be.equal(contractSigningSBT.address);
-      expect(tx.executed).to.be.equal(false);
-      expect(tx.numConfirmations).to.be.equal(4);
-    });
-
-    it("Proposer can executeTransaction to multiSigWallet", async () => {
-      // Proposer confirms transaction to accept new contract signature proposal
-      await multiSigWallet.connect(deployer).executeTransaction(0);
-
-      const tx = await multiSigWallet.transactions(0);
-
-      // Check the transaction state after first confirmation
+      // Check the transaction state after last confirmation
       expect(tx).to.not.be.undefined;
       expect(tx.to).to.be.equal(contractSigningSBT.address);
       expect(tx.executed).to.be.equal(true);
       expect(tx.numConfirmations).to.be.equal(4);
 
-      // after minting, we have a balance of 1
+      // Check minting of the rejSBT, after execute transaction we have a balance of 1
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
       ).to.be.equal(1);
     });
 
     it("In case signer doesn't confirm transaction, the transaction should not be executed", async () => {
-      // before minting, we have a balance of 1
+      // before minting a new contract signature, we have a balance of 1
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
       ).to.be.equal(1);
 
-      // Sender mints a new contract signature token
+      // Proposer mints a new contract signature token
       const tx = await contractSigningSBT
         .connect(deployer)
         .mint(multiSigWallet.address, deadline, expiry, contractHash);
@@ -220,7 +194,7 @@ describe("Contract signing using RejSBT", () => {
       //First token minted
       expect(tokenId).to.be.equal(1);
 
-      // after minting, we have a balance of 1, because it's needed the acceptance from the multiSigWallet
+      // after minting proposal, we have a balance of 1, because it's needed the acceptance from the multiSigWallet
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
       ).to.be.equal(1);
@@ -240,10 +214,10 @@ describe("Contract signing using RejSBT", () => {
         [1]
       );
 
-      // Proposer submits transaction to accept new contract signature proposal
+      // Proposer submits and confirms transaction to accept new contract signature proposal
       await multiSigWallet
         .connect(deployer)
-        .submitTransaction(contractSigningSBT.address, data);
+        .submitTransactionWithSignerConfirmation(contractSigningSBT.address, data);
       const submitTransaction = await multiSigWallet.transactions(1);
 
       // Check the transaction has been submitted
@@ -251,36 +225,25 @@ describe("Contract signing using RejSBT", () => {
       expect(submitTransaction.to).to.be.equal(contractSigningSBT.address);
       expect(submitTransaction.data).to.be.equal(data);
       expect(submitTransaction.executed).to.be.equal(false);
-      expect(submitTransaction.numConfirmations).to.be.equal(0);
+      expect(submitTransaction.numConfirmations).to.be.equal(1);
 
       // Owner1 confirms transaction to accept new contract signature proposal
       await multiSigWallet.connect(signer1).confirmTransaction(1);
 
       let confirmTransaction = await multiSigWallet.transactions(1);
 
-      // Check the transaction state after first confirmation
-      expect(confirmTransaction).to.not.be.undefined;
-      expect(confirmTransaction.to).to.be.equal(contractSigningSBT.address);
-      expect(confirmTransaction.executed).to.be.equal(false);
-      expect(confirmTransaction.numConfirmations).to.be.equal(1);
-
-      // Owner2 confirms transaction to accept new contract signature proposal
-      await multiSigWallet.connect(signer2).confirmTransaction(1);
-
-      confirmTransaction = await multiSigWallet.transactions(1);
-
-      // Check the transaction state after first confirmation
+      // Check the transaction state after confirmation
       expect(confirmTransaction).to.not.be.undefined;
       expect(confirmTransaction.to).to.be.equal(contractSigningSBT.address);
       expect(confirmTransaction.executed).to.be.equal(false);
       expect(confirmTransaction.numConfirmations).to.be.equal(2);
 
-      // Proposer can't execute transaction 
-      // Proposer confirms transaction to accept new contract signature proposal
-      await expect(multiSigWallet.connect(deployer).executeTransaction(1)).to.be.revertedWith("All owners must confirm the transaction");
+      // Last owner can't execute transaction 
+      // Last owner confirms and executes transaction to accept new contract signature proposal
+      await expect(multiSigWallet.connect(signer3).confirmAndExecuteTransaction(1)).to.be.revertedWith("All owners must confirm the transaction");
     });
 
-    it("In case signer revokes confirmation, the transaction should not be executed", async () => {
+    it("In case signer revokes confirmation, the transaction can not be executed", async () => {
       // before minting, we have a balance of 1
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
@@ -317,10 +280,10 @@ describe("Contract signing using RejSBT", () => {
         [tokenId]
       );
 
-      // Proposer submits transaction to accept new contract signature proposal
+      // Proposer submits and confirms transaction to accept new contract signature proposal
       await multiSigWallet
         .connect(deployer)
-        .submitTransaction(contractSigningSBT.address, data);
+        .submitTransactionWithSignerConfirmation(contractSigningSBT.address, data);
       const submitTransaction = await multiSigWallet.transactions(2);
 
       // Check the transaction has been submitted
@@ -328,7 +291,7 @@ describe("Contract signing using RejSBT", () => {
       expect(submitTransaction.to).to.be.equal(contractSigningSBT.address);
       expect(submitTransaction.data).to.be.equal(data);
       expect(submitTransaction.executed).to.be.equal(false);
-      expect(submitTransaction.numConfirmations).to.be.equal(0);
+      expect(submitTransaction.numConfirmations).to.be.equal(1);
 
       // Owner1 confirms transaction to accept new contract signature proposal
       await multiSigWallet.connect(signer1).confirmTransaction(2);
@@ -339,21 +302,10 @@ describe("Contract signing using RejSBT", () => {
       expect(confirmTransaction).to.not.be.undefined;
       expect(confirmTransaction.to).to.be.equal(contractSigningSBT.address);
       expect(confirmTransaction.executed).to.be.equal(false);
-      expect(confirmTransaction.numConfirmations).to.be.equal(1);
+      expect(confirmTransaction.numConfirmations).to.be.equal(2);
 
       // Owner2 confirms transaction to accept new contract signature proposal
       await multiSigWallet.connect(signer2).confirmTransaction(2);
-
-      confirmTransaction = await multiSigWallet.transactions(2);
-
-      // Check the transaction state after first confirmation
-      expect(confirmTransaction).to.not.be.undefined;
-      expect(confirmTransaction.to).to.be.equal(contractSigningSBT.address);
-      expect(confirmTransaction.executed).to.be.equal(false);
-      expect(confirmTransaction.numConfirmations).to.be.equal(2);
-
-      // Owner3 confirms transaction to accept new contract signature proposal
-      await multiSigWallet.connect(signer3).confirmTransaction(2);
 
       confirmTransaction = await multiSigWallet.transactions(2);
 
@@ -374,9 +326,8 @@ describe("Contract signing using RejSBT", () => {
       expect(confirmTransaction.executed).to.be.equal(false);
       expect(confirmTransaction.numConfirmations).to.be.equal(2);
 
-      // Proposer can't execute transaction 
-      // Proposer confirms transaction to accept new contract signature proposal
-      await expect(multiSigWallet.connect(deployer).executeTransaction(2)).to.be.revertedWith("All owners must confirm the transaction");
+      // Last owner can't confirm and execute transaction 
+      await expect(multiSigWallet.connect(signer3).confirmAndExecuteTransaction(2)).to.be.revertedWith("All owners must confirm the transaction");
     });
 
   });

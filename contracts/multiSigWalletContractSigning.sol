@@ -56,7 +56,7 @@ contract multiSigWalletContractSigning {
        emit Deposit(msg.sender, msg.value, address(this).balance);
    }
 
-   function submitTransaction(
+   function submitTransactionWithSignerConfirmation(
        address _to,
        bytes memory _data
    ) public onlyOwner {
@@ -70,6 +70,8 @@ contract multiSigWalletContractSigning {
            })
        );
        emit SubmitTransaction(msg.sender, txIndex, _to, _data);
+
+       confirmTransaction(txIndex);
    }
 
    function confirmTransaction(
@@ -81,9 +83,10 @@ contract multiSigWalletContractSigning {
        emit ConfirmTransaction(msg.sender, _txIndex);
    }
 
-   function executeTransaction(
+   function confirmAndExecuteTransaction(
        uint _txIndex
    ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
+         confirmTransaction(_txIndex);
        Transaction storage transaction = transactions[_txIndex];
        require(
            transaction.numConfirmations == owners.length,
