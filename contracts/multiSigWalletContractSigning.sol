@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "./IContractSigningRejSBT.sol";
+
 contract multiSigWalletContractSigning {
     address[] public owners;
     mapping(address => bool) public isOwner;
@@ -8,9 +10,10 @@ contract multiSigWalletContractSigning {
     mapping(uint => mapping(address => bool)) public isConfirmed;
     struct Transaction {
        address to;
+       uint256 tokenId;
        bytes data;
        bool executed;
-       uint numConfirmations;
+       uint256 numConfirmations;
    }
 
    event Deposit(address indexed sender, uint value, uint balance);
@@ -39,6 +42,13 @@ contract multiSigWalletContractSigning {
         _;
     }
 
+    modifier notExpired(uint _txIndex){
+        address contractSigningAddress = transactions[_txIndex].to;
+        IContractSingnigRejSBT ContractSigningRejSBT = IContractSingnigRejSBT(contractSigningAddress);
+        require( ContractSigningRejSBT.getState(transactions[_txIndex].tokenId) != IContractSingnigRejSBT.IBEState(4), "Contract signature proposal deadline expired");
+        _;
+    }
+
     Transaction[] public transactions;
 
    constructor(address[] memory _owners) {
@@ -58,12 +68,14 @@ contract multiSigWalletContractSigning {
 
    function submitTransactionWithSignerConfirmation(
        address _to,
+       uint256 _tokenId,
        bytes memory _data
    ) public onlyOwner {
        uint txIndex = transactions.length;
        transactions.push(
            Transaction({
                to: _to,
+               tokenId: _tokenId,
                data: _data,
                executed: false,
                numConfirmations: 0
@@ -76,7 +88,7 @@ contract multiSigWalletContractSigning {
 
    function confirmTransaction(
        uint _txIndex
-   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
+   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) notExpired(_txIndex){
        Transaction storage transaction = transactions[_txIndex];
        transaction.numConfirmations += 1;
        isConfirmed[_txIndex][msg.sender] = true;
@@ -85,7 +97,7 @@ contract multiSigWalletContractSigning {
 
    function confirmAndExecuteTransaction(
        uint _txIndex
-   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
+   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notExpired(_txIndex) {
          confirmTransaction(_txIndex);
        Transaction storage transaction = transactions[_txIndex];
        require(
