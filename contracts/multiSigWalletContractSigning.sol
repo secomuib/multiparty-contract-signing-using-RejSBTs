@@ -104,11 +104,11 @@ contract multiSigWalletContractSigning {
            transaction.numConfirmations == owners.length,
            "All owners must confirm the transaction"
        );
-       transaction.executed = true;
        (bool success, ) = transaction.to.call(
            transaction.data
        );
        require(success, "Transaction execution failed");
+       transaction.executed = true;
        emit ExecuteTransaction(msg.sender, _txIndex);
    }
 

@@ -1,12 +1,12 @@
 import { config as dotenvConfig } from "dotenv";
 import { resolve } from "path";
-import { HardhatUserConfig } from "hardhat/types";
+import { HardhatUserConfig } from "hardhat/types/config";
 import "@nomiclabs/hardhat-waffle";
-import "@nomiclabs/hardhat-ethers";
-import "@nomiclabs/hardhat-solhint";
+import "hardhat-deploy";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
-import "hardhat-deploy";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-solhint";
 
 dotenvConfig({ path: resolve(__dirname, "./.env") });
 
@@ -19,6 +19,8 @@ const CHAIN_IDS = {
 const MNEMONIC = process.env.MNEMONIC || "";
 const COINMARKETCAP_API_KEY = process.env.COINMARKETCAP_API_KEY || "";
 const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
+const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY || "";
+const MAINET_ETHERSCAN_API_KEY = process.env.MAINET_ETHERSCAN_API_KEY || "";
 
 const getInfuraURL = (network: string) => {
   return `https://${network}.infura.io/v3/${INFURA_API_KEY}`;
@@ -55,16 +57,15 @@ const config: HardhatUserConfig = {
       }
     ]
   },
-  gasReporter: {
-    
-  }
-  /* namedAccounts: {
-    deployer: {
-      default: 0 // Here this will by default take the first account as deployer
-    }
-  }, */
- 
-  
+  gasReporter: {
+    currency: "USD",
+    L1: "ethereum",
+    coinmarketcap: COINMARKETCAP_API_KEY,
+    enabled: true,
+    currencyDisplayPrecision: 4,
+    noColors: true,
+    L1Etherscan: MAINET_ETHERSCAN_API_KEY,
+  }  
 };
 
 export default config;

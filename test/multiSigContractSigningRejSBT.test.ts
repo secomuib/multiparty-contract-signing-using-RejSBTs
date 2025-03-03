@@ -1,7 +1,8 @@
-import { waffle, ethers } from "hardhat";
+import { waffle } from "hardhat";
 import "@nomiclabs/hardhat-waffle";
-import chai from "chai";
 import { Contract, utils } from "ethers";
+import { ethers } from "hardhat";
+import chai from "chai";
 
 chai.use(waffle.solidity);
 const { expect } = chai;
@@ -17,7 +18,7 @@ describe("Contract signing using RejSBT", () => {
 
   before(async () => {
     [deployer, signer1, signer2, signer3] = await ethers.getSigners();
-
+    
     const multiSigWalletOwners = [
       deployer.address,
       signer1.address,
@@ -83,7 +84,7 @@ describe("Contract signing using RejSBT", () => {
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
       ).to.be.equal(0);
-      // Sender mints a new contract signature token
+      // Sender proposes the mint of a new contract signature token
       const tx = await contractSigningSBT
         .connect(deployer)
         .mint(multiSigWallet.address, deadline, expiry, contractHash);
@@ -126,7 +127,11 @@ describe("Contract signing using RejSBT", () => {
       // Proposer submits and confirms transaction to accept new contract signature proposal
       await multiSigWallet
         .connect(deployer)
-        .submitTransactionWithSignerConfirmation(contractSigningSBT.address, tokenId, data);
+        .submitTransactionWithSignerConfirmation(
+          contractSigningSBT.address,
+          tokenId,
+          data
+        );
       const tx = await multiSigWallet.transactions(0);
 
       // Check the transaction has been submitted and has the first confirmation
@@ -210,7 +215,7 @@ describe("Contract signing using RejSBT", () => {
       // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = expired
       expect(await contractSigningSBT.getState(tokenId)).to.be.equal(0);
 
-        // Deployer defines the data to submit the transaction
+      // Deployer defines the data to submit the transaction
       const data = contractSigningSBT.interface.encodeFunctionData(
         "acceptTransfer",
         [1]
@@ -219,7 +224,11 @@ describe("Contract signing using RejSBT", () => {
       // Proposer submits and confirms transaction to accept new contract signature proposal
       await multiSigWallet
         .connect(deployer)
-        .submitTransactionWithSignerConfirmation(contractSigningSBT.address, tokenId, data);
+        .submitTransactionWithSignerConfirmation(
+          contractSigningSBT.address,
+          tokenId,
+          data
+        );
       const submitTransaction = await multiSigWallet.transactions(1);
 
       // Check the transaction has been submitted
@@ -240,9 +249,11 @@ describe("Contract signing using RejSBT", () => {
       expect(confirmTransaction.executed).to.be.equal(false);
       expect(confirmTransaction.numConfirmations).to.be.equal(2);
 
-      // Last owner can't execute transaction 
+      // Last owner can't execute transaction
       // Last owner confirms and executes transaction to accept new contract signature proposal
-      await expect(multiSigWallet.connect(signer3).confirmAndExecuteTransaction(1)).to.be.revertedWith("All owners must confirm the transaction");
+      await expect(
+        multiSigWallet.connect(signer3).confirmAndExecuteTransaction(1)
+      ).to.be.revertedWith("All owners must confirm the transaction");
     });
 
     it("In case signer revokes confirmation, the transaction can not be executed", async () => {
@@ -276,7 +287,7 @@ describe("Contract signing using RejSBT", () => {
       // check the state of the token. 0 = minted, 1 = accepted, 2 = rejected, 3 = cancelled, 4 = expired
       expect(await contractSigningSBT.getState(tokenId)).to.be.equal(0);
 
-        // Deployer defines the data to submit the transaction
+      // Deployer defines the data to submit the transaction
       const data = contractSigningSBT.interface.encodeFunctionData(
         "acceptTransfer",
         [tokenId]
@@ -285,7 +296,11 @@ describe("Contract signing using RejSBT", () => {
       // Proposer submits and confirms transaction to accept new contract signature proposal
       await multiSigWallet
         .connect(deployer)
-        .submitTransactionWithSignerConfirmation(contractSigningSBT.address, tokenId, data);
+        .submitTransactionWithSignerConfirmation(
+          contractSigningSBT.address,
+          tokenId,
+          data
+        );
       const submitTransaction = await multiSigWallet.transactions(2);
 
       // Check the transaction has been submitted
@@ -328,10 +343,11 @@ describe("Contract signing using RejSBT", () => {
       expect(confirmTransaction.executed).to.be.equal(false);
       expect(confirmTransaction.numConfirmations).to.be.equal(2);
 
-      // Last owner can't confirm and execute transaction 
-      await expect(multiSigWallet.connect(signer3).confirmAndExecuteTransaction(2)).to.be.revertedWith("All owners must confirm the transaction");
+      // Last owner can't confirm and execute transaction
+      await expect(
+        multiSigWallet.connect(signer3).confirmAndExecuteTransaction(2)
+      ).to.be.revertedWith("All owners must confirm the transaction");
     });
-
   });
 
   describe("Contract sign proposal expired", () => {
@@ -386,15 +402,21 @@ describe("Contract signing using RejSBT", () => {
       );
 
       // Wait until the deadline expires
-      await new Promise( resolve => setTimeout(resolve, 35 * 1000) );
-      
+      await new Promise((resolve) => setTimeout(resolve, 35 * 1000));
+
       // Proposer submits and confirms transaction to accept new contract signature proposal
       const tx = multiSigWallet
         .connect(deployer)
-        .submitTransactionWithSignerConfirmation(contractSigningSBT.address, tokenId, data);
+        .submitTransactionWithSignerConfirmation(
+          contractSigningSBT.address,
+          tokenId,
+          data
+        );
 
       // Check the transaction has been submitted and has the first confirmation
-      await expect(tx).to.be.revertedWith("Contract signature proposal deadline expired");
+      await expect(tx).to.be.revertedWith(
+        "Contract signature proposal deadline expired"
+      );
     });
   });
 });

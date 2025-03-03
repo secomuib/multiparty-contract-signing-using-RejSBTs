@@ -10,16 +10,26 @@
   "author": "Rosa Pericàs Gornals",
   "license": "ISC",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nomiclabs/hardhat-etherscan": "^3.1.8",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
-    "chai": "^4.5.0",
-    "hardhat": "^2.22.4"
+    "@typechain/ethers-v5": "^11.1.2",
+    "chai": "4.5.0",
+    "ethereum-waffle": "^3.4.4",
+    "ethers": "^5.8.0",
+    "hardhat": "^2.14.0",
+    "hardhat-gas-reporter": "^2.2.2",
+    "solidity-coverage": "^0.8.14"
   },
   "dependencies": {
     "@nomiclabs/hardhat-solhint": "^3.1.0",
     "@openzeppelin/contracts": "^5.0.2",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "^22.13.8",
     "dotenv": "^16.4.5",
     "hardhat-deploy": "^0.12.4",
-    "hardhat-gas-reporter": "^2.2.2"
+    "mocha": "^10.2.0",
+    "ts-node": "^10.9.2",
+    "typescript": "*"
   }
 }
