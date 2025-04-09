@@ -9,10 +9,8 @@ import "./RejectableSBT.sol";
 /// The token can be rejected/accepted only before the deadline.
 abstract contract RejectableSBTDeadline is RejectableSBT {
     enum State {
-        Minted,
+        Proposed,
         Accepted,
-        Rejected,
-        Cancelled,
         Expired
     }
 
@@ -54,7 +52,7 @@ abstract contract RejectableSBTDeadline is RejectableSBT {
         );
         require(
             !_exists(tokenId),
-            "RejectableSBTDeadline: token already minted"
+            "RejectableSBTDeadline: token already proposed"
         );
         require(
             deadline > block.timestamp,
@@ -64,7 +62,7 @@ abstract contract RejectableSBTDeadline is RejectableSBT {
         _minters[tokenId] = _msgSender();
         _transferableOwners[tokenId] = to;
         _deadlines[tokenId] = deadline;
-        _states[tokenId] = State.Minted;
+        _states[tokenId] = State.Proposed;
 
         emit TransferRequest(_msgSender(), to, tokenId);
     }
@@ -79,7 +77,7 @@ abstract contract RejectableSBTDeadline is RejectableSBT {
             "RejectableSBTDeadline: deadline expired"
         );
         require(
-            _states[tokenId] == State.Minted,
+            _states[tokenId] == State.Proposed,
             "RejectableSBTDeadline: token is not in minted state"
         );
 
@@ -93,56 +91,5 @@ abstract contract RejectableSBTDeadline is RejectableSBT {
         _transferableOwners[tokenId] = address(0);
 
         emit AcceptTransfer(from, to, tokenId);
-    }
-
-    function rejectTransfer(uint256 tokenId) public virtual override {
-        require(
-            _transferableOwners[tokenId] == _msgSender(),
-            "RejectableSBTDeadline: reject transfer caller is not the receiver of the token"
-        );
-        require(
-            _deadlines[tokenId] > block.timestamp,
-            "RejectableSBTDeadline: deadline expired"
-        );
-        require(
-            _states[tokenId] == State.Minted,
-            "RejectableSBTDeadline: token is not in minted state"
-        );
-
-        address from = minterOf(tokenId);
-        address to = _msgSender();
-
-        _states[tokenId] = State.Rejected;
-        _transferableOwners[tokenId] = address(0);
-
-        emit RejectTransfer(from, to, tokenId);
-    }
-
-    function cancelTransfer(uint256 tokenId) public virtual override {
-        require(
-            minterOf(tokenId) == _msgSender(),
-            "RejectableSBTDeadline: cancel transfer caller is not the minter of the token"
-        );
-        require(
-            _deadlines[tokenId] > block.timestamp,
-            "RejectableSBTDeadline: deadline expired"
-        );
-        require(
-            _states[tokenId] == State.Minted,
-            "RejectableSBTDeadline: token is not in minted state"
-        );
-
-        address from = minterOf(tokenId);
-        address to = _transferableOwners[tokenId];
-
-        require(
-            to != address(0),
-            "RejectableSBTDeadline: token is not transferable"
-        );
-
-        _states[tokenId] = State.Cancelled;
-        _transferableOwners[tokenId] = address(0);
-
-        emit CancelTransfer(from, to, tokenId);
     }
 }

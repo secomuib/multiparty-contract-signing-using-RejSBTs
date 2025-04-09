@@ -4,29 +4,28 @@ pragma solidity ^0.8.20;
 import "./IContractSigningRejSBT.sol";
 
 contract multiSigWalletContractSigning {
+    address public proposerOwner;
     address[] public owners;
     mapping(address => bool) public isOwner;
 
-    mapping(uint => mapping(address => bool)) public isConfirmed;
+    mapping(uint => mapping(address => bool)) public isApproved;
     struct Transaction {
        address to;
        uint256 tokenId;
        bytes data;
        bool executed;
-       uint256 numConfirmations;
+       uint256 numApprovals;
    }
 
-   event Deposit(address indexed sender, uint value, uint balance);
    event SubmitTransaction(address sender, uint txIndex, address recipient, bytes data);
-   event ConfirmTransaction(address sender, uint txIndex);
+   event ApproveTransaction(address sender, uint txIndex);
    event ExecuteTransaction(address sender, uint txIndex);
-   event RevokeConfirmation(address sender, uint txIndex);
 
     modifier onlyOwner(){
-        require(isOwner[msg.sender], "Sender is not owner");
+        require(isOwner[msg.sender] && msg.sender != proposerOwner, "Sender is not owner or is proposer owner");
         _;
     }
-    
+
     modifier txExists(uint _txIndex){
         require(_txIndex < transactions.length, "Transaction does not exist");
         _;
@@ -37,8 +36,8 @@ contract multiSigWalletContractSigning {
         _;
     }
 
-    modifier notConfirmed(uint _txIndex){
-        require(!isConfirmed[_txIndex][msg.sender], "Transaction already confirmed by sender");
+    modifier notApproved(uint _txIndex){
+        require(!isApproved[_txIndex][msg.sender], "Transaction already approved by sender");
         _;
     }
 
@@ -52,7 +51,8 @@ contract multiSigWalletContractSigning {
     Transaction[] public transactions;
 
    constructor(address[] memory _owners) {
-       require(_owners.length > 1, "Multisign walled must be owned by more than one address");
+       require(_owners.length > 1, "Multisign wallet must be owned by more than one address");
+       proposerOwner = msg.sender;
        for (uint i = 0; i < _owners.length; i++) {
            address owner = _owners[i];
            require(owner != address(0), "Owner can not be zero address");
@@ -62,11 +62,7 @@ contract multiSigWalletContractSigning {
        }
    }
 
-   receive() external payable {
-       emit Deposit(msg.sender, msg.value, address(this).balance);
-   }
-
-   function submitTransactionWithSignerConfirmation(
+   function submitTransactionWithSignerApproval(
        address _to,
        uint256 _tokenId,
        bytes memory _data
@@ -78,31 +74,31 @@ contract multiSigWalletContractSigning {
                tokenId: _tokenId,
                data: _data,
                executed: false,
-               numConfirmations: 0
+               numApprovals: 0
            })
        );
        emit SubmitTransaction(msg.sender, txIndex, _to, _data);
 
-       confirmTransaction(txIndex);
+       approveTransaction(txIndex);
    }
 
-   function confirmTransaction(
+   function approveTransaction(
        uint _txIndex
-   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) notExpired(_txIndex){
+   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notApproved(_txIndex) notExpired(_txIndex){
        Transaction storage transaction = transactions[_txIndex];
-       transaction.numConfirmations += 1;
-       isConfirmed[_txIndex][msg.sender] = true;
-       emit ConfirmTransaction(msg.sender, _txIndex);
+       transaction.numApprovals += 1;
+       isApproved[_txIndex][msg.sender] = true;
+       emit ApproveTransaction(msg.sender, _txIndex);
    }
 
-   function confirmAndExecuteTransaction(
+   function approveAndExecuteTransaction(
        uint _txIndex
    ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notExpired(_txIndex) {
-         confirmTransaction(_txIndex);
+         approveTransaction(_txIndex);
        Transaction storage transaction = transactions[_txIndex];
        require(
-           transaction.numConfirmations == owners.length,
-           "All owners must confirm the transaction"
+           transaction.numApprovals == owners.length - 1 && isApproved[_txIndex][proposerOwner] == false,
+           "All owners must approve the transaction, except the proposerOwner"
        );
        (bool success, ) = transaction.to.call(
            transaction.data
@@ -110,15 +106,5 @@ contract multiSigWalletContractSigning {
        require(success, "Transaction execution failed");
        transaction.executed = true;
        emit ExecuteTransaction(msg.sender, _txIndex);
-   }
-
-   function revokeConfirmation(
-       uint _txIndex
-   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
-       Transaction storage transaction = transactions[_txIndex];
-       require(isConfirmed[_txIndex][msg.sender], "Transaction not confirmed from sender");
-       transaction.numConfirmations -= 1;
-       isConfirmed[_txIndex][msg.sender] = false;
-       emit RevokeConfirmation(msg.sender, _txIndex);
    }
 }

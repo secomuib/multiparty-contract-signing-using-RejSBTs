@@ -63,8 +63,10 @@ const config: HardhatUserConfig = {
     coinmarketcap: COINMARKETCAP_API_KEY,
     enabled: true,
     currencyDisplayPrecision: 4,
-    noColors: true,
+    noColors: false,
     L1Etherscan: MAINET_ETHERSCAN_API_KEY,
+    reportFormat: "legacy",
+    outputFile: "gas-report.txt"
   }  
 };
 

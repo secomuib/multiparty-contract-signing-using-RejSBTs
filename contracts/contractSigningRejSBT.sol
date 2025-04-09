@@ -66,11 +66,7 @@ contract contractSigningRejSBT is RejectableSBTDeadline {
 
     function getState(uint256 tokenId) public view virtual returns (IBEState) {
         _requireMinted(tokenId);
-        if (_states[tokenId] == State.Rejected) {
-            return IBEState.Rejected;
-        } else if (_states[tokenId] == State.Cancelled) {
-            return IBEState.Cancelled;
-        } else if (_states[tokenId] == State.Accepted) {
+        if (_states[tokenId] == State.Accepted) {
             if (
                 contractData[tokenId].expiry != 0 &&
                 contractData[tokenId].expiry < block.timestamp
