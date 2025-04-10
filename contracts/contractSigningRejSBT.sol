@@ -12,16 +12,12 @@ contract contractSigningRejSBT is RejectableSBTDeadline {
     enum IBEState {
         Minted,
         Accepted,
-        Rejected,
-        Cancelled,
         Expired
     }
 
     struct ContractData {
         //Hash of the contract
         string contractHash;
-        //Expiry date in unix time
-        uint256 expiry;
         //Deadline in unix time
         uint256 deadline;
     }
@@ -37,7 +33,6 @@ contract contractSigningRejSBT is RejectableSBTDeadline {
     function mint(
         address to,
         uint256 deadline_,
-        uint256 expiry_,
         string memory contractHash_
     ) public returns (uint256) {
         require(
@@ -47,8 +42,8 @@ contract contractSigningRejSBT is RejectableSBTDeadline {
         );
 
         require(
-            expiry_ != 0 && expiry_ > deadline_ && deadline_ > block.timestamp,
-            "ContractSigning_SBT: incorrect expiry date or deadline value"
+            deadline_ > block.timestamp,
+            "ContractSigning_SBT: incorrect deadline value"
         );
 
         uint256 tokenId = _tokenIdCounter;
@@ -57,7 +52,6 @@ contract contractSigningRejSBT is RejectableSBTDeadline {
 
         contractData[tokenId] = ContractData({
             contractHash: contractHash_,
-            expiry: expiry_,
             deadline: deadline_
         });
 
@@ -67,14 +61,7 @@ contract contractSigningRejSBT is RejectableSBTDeadline {
     function getState(uint256 tokenId) public view virtual returns (IBEState) {
         _requireMinted(tokenId);
         if (_states[tokenId] == State.Accepted) {
-            if (
-                contractData[tokenId].expiry != 0 &&
-                contractData[tokenId].expiry < block.timestamp
-            ) {
-                return IBEState.Expired;
-            } else {
                 return IBEState.Accepted;
-            }
         } else if (_deadlines[tokenId] < block.timestamp) {
             return IBEState.Expired;
         }

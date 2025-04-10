@@ -77,7 +77,6 @@ describe("Contract signing using RejSBT", () => {
     const contractHash = ethers.utils.keccak256(
       utils.toUtf8Bytes(contractMessage)
     );
-    const expiry = Math.floor(Date.now() / 1000) + 60 * 17; // 17 minutes from now
 
     it("Proposer can propose a new signature mint", async () => {
       // before minting, we have a balance of 0
@@ -87,7 +86,7 @@ describe("Contract signing using RejSBT", () => {
       // Sender proposes the mint of a new contract signature token
       const tx = await contractSigningSBT
         .connect(deployer)
-        .mint(multiSigWallet.address, deadline, expiry, contractHash);
+        .mint(multiSigWallet.address, deadline, contractHash);
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
@@ -182,7 +181,7 @@ describe("Contract signing using RejSBT", () => {
       // Proposer mints a new contract signature token
       const tx = await contractSigningSBT
         .connect(deployer)
-        .mint(multiSigWallet.address, deadline, expiry, contractHash);
+        .mint(multiSigWallet.address, deadline, contractHash);
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;
@@ -242,7 +241,6 @@ describe("Contract signing using RejSBT", () => {
     const contractHash = ethers.utils.keccak256(
       utils.toUtf8Bytes(contractMessage)
     );
-    const expiry = Math.floor(Date.now() / 1000) + 60 * 5; // 5 minutes from now
 
     it("Proposer can propose a new signature mint", async () => {
       // before minting, we have a balance of 1
@@ -252,7 +250,7 @@ describe("Contract signing using RejSBT", () => {
       // Sender mints a new contract signature token
       const tx = await contractSigningSBT
         .connect(deployer)
-        .mint(multiSigWallet.address, deadline, expiry, contractHash);
+        .mint(multiSigWallet.address, deadline, contractHash);
 
       const receipt = await tx.wait();
       const tokenId = receipt.events[0].args.tokenId;

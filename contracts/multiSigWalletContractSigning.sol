@@ -9,6 +9,7 @@ contract multiSigWalletContractSigning {
     mapping(address => bool) public isOwner;
 
     mapping(uint => mapping(address => bool)) public isApproved;
+    mapping(uint => Transaction) public transactions;
     struct Transaction {
        address to;
        uint256 tokenId;
@@ -17,38 +18,36 @@ contract multiSigWalletContractSigning {
        uint256 numApprovals;
    }
 
-   event SubmitTransaction(address sender, uint txIndex, address recipient, bytes data);
-   event ApproveTransaction(address sender, uint txIndex);
-   event ExecuteTransaction(address sender, uint txIndex);
+   event SubmitTransaction(address sender, uint tokenId, address recipient, bytes data);
+   event ApproveTransaction(address sender, uint tokenId);
+   event ExecuteTransaction(address sender, uint tokenId);
 
     modifier onlyOwner(){
         require(isOwner[msg.sender] && msg.sender != proposerOwner, "Sender is not owner or is proposer owner");
         _;
     }
 
-    modifier txExists(uint _txIndex){
-        require(_txIndex < transactions.length, "Transaction does not exist");
+    modifier txExists(uint _tokenId){
+        require(transactions[_tokenId].to != address(0), "Transaction does not exist");
         _;
     }
 
-    modifier notExecuted(uint _txIndex){
-        require(!transactions[_txIndex].executed, "Transaction already executed");
+    modifier notExecuted(uint _tokenId){
+        require(!transactions[_tokenId].executed, "Transaction already executed");
         _;
     }
 
-    modifier notApproved(uint _txIndex){
-        require(!isApproved[_txIndex][msg.sender], "Transaction already approved by sender");
+    modifier notApproved(uint _tokenId){
+        require(!isApproved[_tokenId][msg.sender], "Transaction already approved by sender");
         _;
     }
 
-    modifier notExpired(uint _txIndex){
-        address contractSigningAddress = transactions[_txIndex].to;
+    modifier notExpired(uint _tokenId){
+        address contractSigningAddress = transactions[_tokenId].to;
         IContractSingnigRejSBT ContractSigningRejSBT = IContractSingnigRejSBT(contractSigningAddress);
-        require( ContractSigningRejSBT.getState(transactions[_txIndex].tokenId) != IContractSingnigRejSBT.IBEState(4), "Contract signature proposal deadline expired");
+        require( ContractSigningRejSBT.getState(_tokenId) != IContractSingnigRejSBT.IBEState(2), "Contract signature proposal deadline expired");
         _;
     }
-
-    Transaction[] public transactions;
 
    constructor(address[] memory _owners) {
        require(_owners.length > 1, "Multisign wallet must be owned by more than one address");
@@ -66,38 +65,38 @@ contract multiSigWalletContractSigning {
        address _to,
        uint256 _tokenId,
        bytes memory _data
-   ) public onlyOwner {
-       uint txIndex = transactions.length;
-       transactions.push(
+   ) public onlyOwner notExpired(_tokenId){
+        require(transactions[_tokenId].to == address(0), "TokenId transaction already exists");
+
+       transactions[_tokenId] = 
            Transaction({
                to: _to,
                tokenId: _tokenId,
                data: _data,
                executed: false,
                numApprovals: 0
-           })
-       );
-       emit SubmitTransaction(msg.sender, txIndex, _to, _data);
+           });
+       emit SubmitTransaction(msg.sender, _tokenId, _to, _data);
 
-       approveTransaction(txIndex);
+       approveTransaction(_tokenId);
    }
 
    function approveTransaction(
-       uint _txIndex
-   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notApproved(_txIndex) notExpired(_txIndex){
-       Transaction storage transaction = transactions[_txIndex];
+       uint _tokenId
+   ) public onlyOwner txExists(_tokenId) notExecuted(_tokenId) notApproved(_tokenId) notExpired(_tokenId){
+       Transaction storage transaction = transactions[_tokenId];
        transaction.numApprovals += 1;
-       isApproved[_txIndex][msg.sender] = true;
-       emit ApproveTransaction(msg.sender, _txIndex);
+       isApproved[_tokenId][msg.sender] = true;
+       emit ApproveTransaction(msg.sender, _tokenId);
    }
 
    function approveAndExecuteTransaction(
-       uint _txIndex
-   ) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notExpired(_txIndex) {
-         approveTransaction(_txIndex);
-       Transaction storage transaction = transactions[_txIndex];
+       uint _tokenId
+   ) public onlyOwner txExists(_tokenId) notExecuted(_tokenId) notExpired(_tokenId) {
+         approveTransaction(_tokenId);
+       Transaction storage transaction = transactions[_tokenId];
        require(
-           transaction.numApprovals == owners.length - 1 && isApproved[_txIndex][proposerOwner] == false,
+           transaction.numApprovals == owners.length - 1 && isApproved[_tokenId][proposerOwner] == false,
            "All owners must approve the transaction, except the proposerOwner"
        );
        (bool success, ) = transaction.to.call(
@@ -105,6 +104,6 @@ contract multiSigWalletContractSigning {
        );
        require(success, "Transaction execution failed");
        transaction.executed = true;
-       emit ExecuteTransaction(msg.sender, _txIndex);
+       emit ExecuteTransaction(msg.sender, _tokenId);
    }
 }
