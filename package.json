@@ -14,12 +14,12 @@
     "@nomiclabs/hardhat-etherscan": "^3.1.8",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@typechain/ethers-v5": "^11.1.2",
-    "chai": "4.5.0",
+    "chai": "^4.5.0",
     "ethereum-waffle": "^3.4.4",
     "ethers": "^5.8.0",
     "hardhat": "^2.14.0",
-    "hardhat-gas-reporter": "^2.2.2",
-    "solidity-coverage": "^0.8.14"
+    "hardhat-gas-reporter": "^2.2.3",
+    "solidity-coverage": "^0.8.16"
   },
   "dependencies": {
     "@nomiclabs/hardhat-solhint": "^3.1.0",

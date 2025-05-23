@@ -123,7 +123,6 @@ describe("Contract signing using RejSBT", () => {
         [tokenId]
       );
       // Proposer submits and approves transaction to accept new contract signature proposal
-      console.log( 
         await multiSigWallet
         .connect(signer1)
         .submitTransactionWithSignerApproval(
@@ -131,7 +130,7 @@ describe("Contract signing using RejSBT", () => {
           tokenId,
           data
         )
-      )
+      
       const tx = await multiSigWallet.transactions(0);
 
       // Check the transaction has been submitted and has the first approval

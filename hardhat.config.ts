@@ -32,6 +32,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: CHAIN_IDS.HARDHAT,
       accounts: { mnemonic: MNEMONIC },
+      
     },
     mainnet: {
       url: getInfuraURL("mainnet"),
@@ -63,9 +64,9 @@ const config: HardhatUserConfig = {
     coinmarketcap: COINMARKETCAP_API_KEY,
     enabled: true,
     currencyDisplayPrecision: 4,
-    noColors: false,
+    // noColors: false,
     L1Etherscan: MAINET_ETHERSCAN_API_KEY,
-    reportFormat: "legacy",
+    reportFormat: "terminal",
     outputFile: "gas-report.txt"
   }  
 };
