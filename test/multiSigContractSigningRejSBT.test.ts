@@ -83,7 +83,7 @@ describe("Contract signing using RejSBT", () => {
       expect(
         await contractSigningSBT.balanceOf(multiSigWallet.address)
       ).to.be.equal(0);
-      // Sender proposes the mint of a new contract signature token
+      // PS proposes the mint of a new contract signature token
       const tx = await contractSigningSBT
         .connect(deployer)
         .mint(multiSigWallet.address, deadline, contractHash);
@@ -122,15 +122,16 @@ describe("Contract signing using RejSBT", () => {
         "acceptTransfer",
         [tokenId]
       );
-
       // Proposer submits and approves transaction to accept new contract signature proposal
-      await multiSigWallet
+      console.log( 
+        await multiSigWallet
         .connect(signer1)
         .submitTransactionWithSignerApproval(
           contractSigningSBT.address,
           tokenId,
           data
-        );
+        )
+      )
       const tx = await multiSigWallet.transactions(0);
 
       // Check the transaction has been submitted and has the first approval

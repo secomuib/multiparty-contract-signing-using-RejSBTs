@@ -42,8 +42,7 @@ contract multiSigWalletContractSigning {
         _;
     }
 
-    modifier notExpired(uint _tokenId){
-        address contractSigningAddress = transactions[_tokenId].to;
+    modifier notExpired(address contractSigningAddress, uint _tokenId){
         IContractSingnigRejSBT ContractSigningRejSBT = IContractSingnigRejSBT(contractSigningAddress);
         require( ContractSigningRejSBT.getState(_tokenId) != IContractSingnigRejSBT.IBEState(2), "Contract signature proposal deadline expired");
         _;
@@ -65,7 +64,7 @@ contract multiSigWalletContractSigning {
        address _to,
        uint256 _tokenId,
        bytes memory _data
-   ) public onlyOwner notExpired(_tokenId){
+   ) public onlyOwner notExpired(_to, _tokenId){
         require(transactions[_tokenId].to == address(0), "TokenId transaction already exists");
 
        transactions[_tokenId] = 
@@ -83,7 +82,7 @@ contract multiSigWalletContractSigning {
 
    function approveTransaction(
        uint _tokenId
-   ) public onlyOwner txExists(_tokenId) notExecuted(_tokenId) notApproved(_tokenId) notExpired(_tokenId){
+   ) public onlyOwner txExists(_tokenId) notExecuted(_tokenId) notApproved(_tokenId) notExpired(transactions[_tokenId].to, _tokenId){
        Transaction storage transaction = transactions[_tokenId];
        transaction.numApprovals += 1;
        isApproved[_tokenId][msg.sender] = true;
@@ -92,7 +91,7 @@ contract multiSigWalletContractSigning {
 
    function approveAndExecuteTransaction(
        uint _tokenId
-   ) public onlyOwner txExists(_tokenId) notExecuted(_tokenId) notExpired(_tokenId) {
+   ) public onlyOwner txExists(_tokenId) notExecuted(_tokenId) notExpired(transactions[_tokenId].to, _tokenId) {
          approveTransaction(_tokenId);
        Transaction storage transaction = transactions[_tokenId];
        require(
